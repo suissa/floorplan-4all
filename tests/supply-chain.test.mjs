@@ -100,7 +100,7 @@ test('it runs a fixed list of programs, and never through a shell', () => {
   assert.deepEqual([...new Set(names)].sort(), ['execFileSync', 'spawn'], `child_process functions used. ${UPDATE}`);
   assert.deepEqual(find(/(?<![.\w])(exec|execSync|fork|spawnSync|execFile)\(/).map((x) => `${x.file}:${x.line} ${x.text}`), [], `other ways to start programs. ${UPDATE}`);
   assert.deepEqual(find(/shell:\s*true/).map((x) => `${x.file}:${x.line}`), [], 'never through a shell');
-  // what each call starts: where/which, the Claude Code or Codex CLI, Node running the skill's own scripts,
+  // what each call starts: where/which, a native or explicitly configured CLI, Node running the skill's own scripts,
   // git, and the system's "open this address in the browser" command
   const ALLOWED = new Set([
     "process.platform === 'win32' ? 'where' : 'which'",
@@ -119,6 +119,19 @@ test('it runs a fixed list of programs, and never through a shell', () => {
   const openers = /\? \['cmd', \['\/c', 'start', '', u\]\] : process\.platform === 'darwin' \? \['open', \[u\]\] : \['xdg-open', \[u\]\]/;
   assert.match(read(path.join(SKILL, 'assets', 'serve.mjs')), openers);
   assert.match(read(path.join(SKILL, 'scripts', 'open.mjs')), openers);
+});
+
+test('a third-party agent command is configured explicitly and must opt into read-only mode', () => {
+  const server = read(path.join(SKILL, 'assets', 'serve.mjs'));
+  assert.match(server, /FLOORPLAN_AGENT_COMMAND/);
+  assert.match(server, /FLOORPLAN_AGENT_ARGS/);
+  assert.match(server, /FLOORPLAN_AGENT_READ_ONLY/);
+  assert.match(server, /if \(!customCommand \|\| !customReadOnly\) return null/);
+  assert.match(server, /spawn\(cli\.cmd, run\.args, \{ cwd: root, env: cliEnv\(\), stdio:/);
+  assert.doesNotMatch(server, /spawn\(\s*customCommand/);
+  assert.match(server, /customArgs\.map\(\(arg\) => arg\.replace/);
+  assert.match(server, /customArgs\.length > 64/);
+  assert.match(server, /a\.length > 8192/);
 });
 
 test('no code is downloaded, decoded or built from text at run time', () => {
