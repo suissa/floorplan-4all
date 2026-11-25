@@ -15,7 +15,7 @@ test('Codex is recognised by the variables it sets for every command', () => {
   assert.equal(detectAgent({}, { CLAUDECODE: '1' }), 'claude');
 });
 
-test('--agent and FLOORPLAN_AGENT override the guess, and nonsense is ignored', () => {
+test('--agent and environment variables identify native and third-party agents', () => {
   assert.equal(detectAgent({ agent: 'codex' }, {}), 'codex');
   assert.equal(detectAgent({ agent: 'Claude' }, { CODEX_THREAD_ID: 'abc' }), 'claude');
   assert.equal(detectAgent({}, { FLOORPLAN_AGENT: 'codex' }), 'codex');
@@ -33,6 +33,18 @@ test('a map built under Codex records it, and leaves the project notes alone', (
     assert.match(out, /AGENT {2}Codex/);
     assert.ok(!fs.existsSync(path.join(root, 'CLAUDE.local.md')), 'no CLAUDE.local.md');
     assert.ok(!fs.existsSync(path.join(root, 'AGENTS.md')), 'no AGENTS.md');
+  } finally { cleanup(root); }
+});
+
+test('a third-party agent is recorded without Claude-specific project notes', () => {
+  const root = shopApp();
+  try {
+    run('scan.mjs', root);
+    const out = run('build.mjs', root, '--agent', 'opencode');
+    assert.equal(readGraph(root).meta.agent, 'opencode');
+    assert.match(out, /AGENT {2}opencode/);
+    assert.doesNotMatch(out, /CLAUDE\.LOCAL\.MD/);
+    assert.ok(!fs.existsSync(path.join(root, 'CLAUDE.local.md')));
   } finally { cleanup(root); }
 });
 
