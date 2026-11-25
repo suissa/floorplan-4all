@@ -1,6 +1,6 @@
 // A tripwire for what the plugin can do on someone's computer. docs/is-it-safe.md promises: no hooks, no
 // MCP servers, no dependencies or install steps, nothing downloaded or run from the internet, one outbound
-// network call (the opt-in waitlist), a fixed list of programs it runs, and vendored files that match their
+// network call (the opt-in waitlist), native programs plus an optional user-configured executable, and vendored files that match their
 // published versions. These tests fail if any of that changes, so a change like that can't slip in unnoticed,
 // in a pull request or anywhere else. If a change is intended, update this file and docs/is-it-safe.md together.
 import { test } from 'node:test';
@@ -92,7 +92,7 @@ test('it reaches the internet in one place: the waitlist, only when someone sign
   assert.doesNotMatch(page, /url\(\s*["']?https?:/i, 'no external images or fonts in CSS');
 });
 
-test('it runs a fixed list of programs, and never through a shell', () => {
+test('it runs only native or explicitly configured programs, and never through a shell', () => {
   const importers = find(/from\s+['"](?:node:)?child_process['"]/).map((x) => x.file).sort();
   assert.deepEqual(importers, ['assets/serve.mjs', 'scripts/lib/common.mjs', 'scripts/open.mjs', 'scripts/refresh.mjs'], `files that start programs. ${UPDATE}`);
   // only spawn and execFileSync, which take a program and its arguments (regex .exec() is text matching)
