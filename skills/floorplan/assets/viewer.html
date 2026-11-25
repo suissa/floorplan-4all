@@ -2023,8 +2023,12 @@ const askState = { engine: null, sample: null, busy: false, ctl: null, session: 
 const askInput = $('#ask-input'), askSend = $('#ask-send'), sheet = $('#ask-sheet'), warn = $('#ask-warn');
 const DOCS = 'https://docs.claude.com/en/docs/claude-code/overview'; // the Claude app's tip: install the CLI
 const WARNINGS = {
-  no_engine: `Asking needs <b>${AGENT.cli}</b>. From the codebase root run <code>node floorplan/serve.mjs</code>${AGENT.id === 'claude' ? ', or open this map in the Claude app' : ''}.`,
-  cli_missing: `Requires <b>${AGENT.cli}</b> installed to work. <a href="${AGENT.docs}" target="_blank" rel="noopener">Install it</a>, then restart <code>serve.mjs</code>.`,
+  no_engine: GENERIC_AGENT
+    ? `Asking needs a configured read-only CLI for <b>${AGENT.app}</b>. Follow <a href="${AGENT.docs}" target="_blank" rel="noopener">the other-agent setup guide</a>.`
+    : `Asking needs <b>${AGENT.cli}</b>. From the codebase root run <code>node floorplan/serve.mjs</code>${AGENT.id === 'claude' ? ', or open this map in the Claude app' : ''}.`,
+  cli_missing: GENERIC_AGENT
+    ? `No enabled read-only CLI was found for <b>${AGENT.app}</b>. Check <a href="${AGENT.docs}" target="_blank" rel="noopener">the other-agent setup guide</a>, including the read-only setting.`
+    : `Requires <b>${AGENT.cli}</b> installed to work. <a href="${AGENT.docs}" target="_blank" rel="noopener">Install it</a>, then restart <code>serve.mjs</code>.`,
   not_logged_in: `${Cap(AGENT.cli)} isn't signed in. ${AGENT.signIn}`,
   app_unavailable: `Claude isn't available for this map in this view.`,
   not_granted: `Claude access was declined for this map. Reload the page to be asked again.`,
