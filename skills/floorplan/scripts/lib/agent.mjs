@@ -30,7 +30,7 @@ export function cliLabel(engine, version = '', displayName = '') {
   const v = String(version || '').trim();
   const named = /^([A-Za-z][\w.-]{0,40})\s+v?\d/.exec(v)?.[1];
   const known = engine === 'codex' ? /codex/i : engine === 'claude' ? /claude/i : null;
-  if (!named || (known && known.test(v))) return usual;
-  const command = engine === 'codex' ? 'codex' : engine === 'claude' ? 'claude' : 'configured';
+  if (!named || engine === 'custom' || (known && known.test(v))) return usual;
+  const command = engine === 'codex' ? 'codex' : 'claude';
   return `${named}, found as the ${command} command`;
 }
