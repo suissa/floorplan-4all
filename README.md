@@ -230,7 +230,7 @@ You get a [blueprint](#also-blueprints-for-apps-you-havent-built-yet) of the pla
 ```mermaid
 flowchart LR
     code["Your codebase<br/>one repo or several"] --> scan["Scan<br/>files, imports, routes, requests"]
-    scan --> agent["Claude or Codex<br/>names the parts, describes every file"]
+    scan --> agent["Your coding agent<br/>names the parts, describes every file"]
     agent --> build["Build<br/>map, health, screens, recent work"]
     build --> map["floorplan/index.html<br/>opens in your browser"]
     map -. "update the floorplan" .-> scan
@@ -261,7 +261,8 @@ More in [Privacy and security](docs/privacy-and-security.md). Wondering whether 
 | | |
 |---|---|
 | [Getting started](docs/getting-started.md) | Install, first map, updating, planning from a PRD, removing |
-| [Floorplan in Codex](docs/codex.md) | Installing and using it in Codex |\n| [Other coding agents](docs/agents.md) | Connect any CLI-based agent to the Ask bar and configure the read-only contract |
+| [Floorplan in Codex](docs/codex.md) | Installing and using it in Codex |
+| [Other coding agents](docs/agents.md) | Connect any CLI-based agent to the Ask bar and configure the read-only contract |
 | [Using the map](docs/using-the-map.md) | Every button, view, shortcut and menu |
 | [How it works](docs/how-it-works.md) | The pipeline, connection matching, refreshes |
 | [What's in your project](docs/project-files.md) | Every file Floorplan creates, and how to edit it |
@@ -282,7 +283,7 @@ Floorplan has no hooks, no MCP servers and no dependencies, downloads nothing, a
 <details>
 <summary><b>Does my code leave my computer?</b></summary>
 
-Only the way Claude Code and Codex always work: the AI reads the files it needs to describe your app, through your own account. The map itself is a local file and its server only listens on your machine. If you choose to open the map in the Claude app instead, Claude uploads the map (names, descriptions and structure, not your source code) to your private claude.ai account, and asks first. The one thing Floorplan itself ever sends is your email, and only if you sign up for the [Floorplan Cloud waitlist](docs/privacy-and-security.md#floorplan-cloud-waitlist).
+The coding agent reads the files it needs to describe your app through its own account or credentials. For a third-party CLI, its model provider handles those files according to that agent's own policies. The map itself is a local file and its server only listens on your machine. If you choose to open the map in the Claude app instead, Claude uploads the map (names, descriptions and structure, not your source code) to your private claude.ai account, and asks first. The one thing Floorplan itself ever sends is your email, and only if you sign up for the [Floorplan Cloud waitlist](docs/privacy-and-security.md#floorplan-cloud-waitlist).
 </details>
 
 <details>
@@ -300,7 +301,7 @@ The map itself works without an agent CLI. The Ask bar needs the Claude Code or 
 <details>
 <summary><b>Will it change or commit my files?</b></summary>
 
-It only writes its own `floorplan/` folder (and, in Claude Code if you say yes, a section in `CLAUDE.local.md`), and neither is committed. It never changes your code, your `.gitignore` or your `CLAUDE.md`.
+Floorplan's own scripts only write their `floorplan/` folder (and, in Claude Code if you say yes, a section in `CLAUDE.local.md`), and neither is committed. The native Ask adapters are read-only. A third-party CLI must enforce its own read-only mode; Floorplan does not sandbox that process.
 </details>
 
 <details>
@@ -310,7 +311,13 @@ Yes. Just ask ("rename 'Main server' to 'Shop API' on the floorplan"), or edit `
 </details>
 
 <details>
-<summary><b>Does it work with agents other than Claude Code and Codex?</b></summary>\n\nYes. Any coding agent that can read the skill instructions and run Node can scan and build the map. To use the interactive Ask bar, connect its CLI with the generic adapter in [Other coding agents](docs/agents.md). Claude Code and Codex keep their native, automatically detected integrations.\n</details>\n\n<details>\n<summary><b>Does it work with Codex as well as Claude Code?</b></summary>
+<summary><b>Does it work with agents other than Claude Code and Codex?</b></summary>
+
+Yes. Any coding agent that can read the skill instructions and run Node can scan and build the map. To use the interactive Ask bar, connect its CLI with the generic adapter in [Other coding agents](docs/agents.md). Claude Code and Codex keep their native, automatically detected integrations.
+</details>
+
+<details>
+<summary><b>Does it work with Codex as well as Claude Code?</b></summary>
 
 Yes. It's the same plugin, the same map and the same Health check. Each app runs it on your own plan: Claude Code on your Claude account, Codex on your ChatGPT sign-in. A map made in one opens fine with the other. See [Floorplan in Codex](docs/codex.md).
 </details>
