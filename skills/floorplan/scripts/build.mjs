@@ -650,7 +650,7 @@ fs.writeFileSync(path.join(outDir, 'index.html'), html);
 // (and without the reasons on dismissed health issues, which are notes to self)
 const sharedHealth = graph.health?.dismissed ? { ...graph.health, dismissed: graph.health.dismissed.map(({ reason, ...d }) => d) } : graph.health;
 if (args.artifact) fs.writeFileSync(path.join(outDir, 'artifact.html'), page({ ...graph, ...(sharedHealth ? { health: sharedHealth } : {}), meta: { ...graph.meta, root: null, agent: 'claude' } }));
-// Self-contained helpers next to the map: ask questions through the Claude Code CLI or Codex (serve.mjs)
+// Self-contained helpers next to the map: ask questions through a native or configured agent CLI (serve.mjs)
 // and the graph lookups it hands to them (query.mjs). They need only Node, not this skill.
 fs.writeFileSync(path.join(outDir, 'query.mjs'), `${graphQuery}
 // ---- cli ----
@@ -690,6 +690,7 @@ report.push(graph.recent
 // and so does a map made without an agent session. Unattended mode never writes outside the map folder.
 if (agent === 'codex') report.push('AGENT  Codex: questions on the map run through Codex');
 if (agent === 'none') report.push("AGENT  none: made without an agent session, so the map's prompts don't name one");
+else if (agent !== 'claude' && agent !== 'codex') report.push(`AGENT  ${agent}: made with this coding agent`);
 let claudeNote = null;
 if (scan.blueprint) report.push('BLUEPRINT  planned, not built yet: drawn from floorplan/plan.json');
 else if (unattended) report.push(`CLAUDE.LOCAL.MD  ${claudeNote = 'left alone (unattended mode writes only inside the map folder)'}`);
