@@ -25,7 +25,7 @@ The scripts do the mechanical work: finding repos, parsing imports and routes, m
 Existing map: !`node ${CLAUDE_SKILL_DIR}/scripts/status.mjs || true`
 Arguments: $ARGUMENTS
 
-**In Codex or another coding agent** (or any agent that left the two lines above unfilled): `${CLAUDE_SKILL_DIR}` in every command here means this skill's folder, the one holding this SKILL.md, so use its path. Run `node <that folder>/scripts/status.mjs` from the codebase root yourself to see whether a map exists, and take the path and `--refresh` from the user's request. Claude Code and Codex are detected automatically. For another agent, pass `--agent <name>` to `build.mjs` (or set `FLOORPLAN_AGENT=<name>`) so the map records its identity rather than guessing.
+**In Codex or another coding agent** (or any agent that left the two lines above unfilled): `${CLAUDE_SKILL_DIR}` in every command here means this skill's folder, the one holding this SKILL.md, so use its path. Run `node <that folder>/scripts/status.mjs` from the codebase root yourself to see whether a map exists, and take the path and `--refresh` from the user's request. Claude Code and Codex are detected automatically. For another agent, pass `--agent <name>` to `build.mjs` (or set `FLOORPLAN_AGENT=<name>`) so the map records its identity rather than guessing. Use that flag on each `build.mjs` run, including the first build and every refresh, unless `FLOORPLAN_AGENT` is already set in the session.
 
 ## Nothing built yet? Draw a blueprint
 
