@@ -1,4 +1,4 @@
-// Claude Code and Codex: the skill notices which one is running it, and the map remembers, so its
+// Native and third-party agents: the skill records the runner's identity without treating unknown agents as Claude Code.
 // Ask bar and "Fix with …" prompts name the right one. Only Claude Code gets the CLAUDE.local.md note.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -11,7 +11,7 @@ const { detectAgent, cliLabel } = await lib('agent.mjs');
 test('Codex is recognised by the variables it sets for every command', () => {
   assert.equal(detectAgent({}, { CODEX_THREAD_ID: 'abc' }), 'codex');
   assert.equal(detectAgent({}, { CODEX_SESSION_ID: 'abc' }), 'codex');
-  assert.equal(detectAgent({}, {}), 'claude');
+  assert.equal(detectAgent({}, {}), 'other');
   assert.equal(detectAgent({}, { CLAUDECODE: '1' }), 'claude');
 });
 
@@ -19,7 +19,9 @@ test('--agent and FLOORPLAN_AGENT override the guess, and nonsense is ignored', 
   assert.equal(detectAgent({ agent: 'codex' }, {}), 'codex');
   assert.equal(detectAgent({ agent: 'Claude' }, { CODEX_THREAD_ID: 'abc' }), 'claude');
   assert.equal(detectAgent({}, { FLOORPLAN_AGENT: 'codex' }), 'codex');
-  assert.equal(detectAgent({ agent: 'gpt' }, { CODEX_THREAD_ID: 'abc' }), 'codex');
+  assert.equal(detectAgent({ agent: 'gpt' }, { CODEX_THREAD_ID: 'abc' }), 'gpt');
+  assert.equal(detectAgent({}, { FLOORPLAN_AGENT_NAME: 'OpenCode' }), 'opencode');
+  assert.equal(detectAgent({}, { FLOORPLAN_UNATTENDED: '1' }), 'none');
 });
 
 test('a map built under Codex records it, and leaves the project notes alone', () => {
