@@ -1,6 +1,6 @@
 # Is it safe to install?
 
-Plugins for Claude Code and Codex can run code on your computer, so it's worth asking. Some malicious plugins look harmless when you install them, then download and run something else later (a "stage two"). Floorplan is built so it can't do that, a test checks it on every change, and you can confirm all of it yourself.
+Coding-agent plugins and skills can run code on your computer, so it's worth asking. Some malicious plugins look harmless when you install them, then download and run something else later (a "stage two"). Floorplan is built so it can't do that, a test checks it on every change, and you can confirm all of it yourself.
 
 ## What Floorplan never does
 
@@ -21,19 +21,20 @@ Plugins for Claude Code and Codex can run code on your computer, so it's worth a
 - **The page enforces that itself.** Every map carries a Content-Security-Policy: only the page's own scripts run (each is allowed by its SHA-256 hash, computed when the page is written), and images and fonts can only come from inside the file. An **exported copy** may contact nothing at all (`connect-src 'none'`); `floorplan/index.html` and the page the map's server serves may contact only that local server (`connect-src 'self'`), for asking questions, live reload, flows and Export. So even if text from a repository ever slipped past the map's escaping and became script, it couldn't send the map anywhere. The copy made for the Claude app (`--artifact`) has no policy of its own, because the Claude app runs its own code in that page and applies its own rules.
 - **Reporting a false alarm is yours to send.** If you tick the box under **Not a problem** in Health, the map opens a new GitHub issue in your browser with the text filled in, shown to you first. Nothing goes anywhere unless you submit it there.
 
-Asking questions on the map runs Claude Code or Codex, which talk to Anthropic or OpenAI the way they always do, on your account. Floorplan itself sends nothing.
+Asking questions on the map starts either the native Claude Code/Codex CLI or the custom executable you explicitly configure. That agent CLI communicates with its own model provider under its own account or credentials. Floorplan itself sends nothing to that provider.
 
 ### The programs it runs
 
 | Program | When | Why |
 |---|---|---|
 | `git` | scan | Read-only: which files are tracked, the current branch and commit, what changed since the last map |
-| `where` (Windows) or `which` | starting the map's server | Finding the Claude Code or Codex CLI |
-| `claude` or `codex` | when you ask a question on the map | Answering it, read-only: `claude -p` limited to reading files and Floorplan's lookup script, or `codex exec --sandbox read-only` |
+| `where` (Windows) or `which` | starting the map's server | Finding a native CLI or the custom executable you configured |
+| `claude` or `codex` | when you ask a question on the map | Answering through the native read-only adapter: Claude's read-only tools or Codex's `--sandbox read-only` |
+| Your configured executable (optional) | only when you configure a third-party agent and explicitly enable it | Answering through the arguments you supply. It is started directly, with no shell. Its read-only restrictions are the responsibility of that CLI or wrapper; Floorplan does not sandbox it |
 | `node` | throughout | Running Floorplan's own scripts |
 | `cmd /c start`, `open` or `xdg-open` | opening the map | Opening the map's local address in your browser |
 
-Each is started directly with its arguments, never as a command line for a shell to interpret. The one shell is Windows' `cmd /c start`, given only the map's own local address.
+Each agent command is started directly with its argument array, never as a command line for a shell to interpret. A third-party command is not discovered or run automatically: you must set `FLOORPLAN_AGENT_COMMAND` and `FLOORPLAN_AGENT_ARGS`. Floorplan refuses to enable that adapter unless `FLOORPLAN_AGENT_READ_ONLY=1` (or `true`/`yes`) is set. **That variable is an explicit trust assertion, not a sandbox:** set it only when the selected CLI or wrapper enforces read-only access. A custom command that does not enforce this can modify files with the same permissions as the user running Floorplan. See [Other coding agents](agents.md). The one shell is Windows' `cmd /c start`, given only the map's own local address.
 
 ### What runs without asking
 
@@ -60,7 +61,7 @@ In Claude Code, while the skill is in use, it pre-approves one kind of command: 
 
 - add a hook, an MCP server, a dependency or an install script;
 - send a request anywhere other than the map's own server and the waitlist;
-- start a program not in the table above, or start one through a shell;
+- start an agent command other than a native CLI or the optional executable explicitly configured by the user, or start one through a shell;
 - use `eval`, load code at run time, or hide a long encoded string in the code;
 - add a script that would run without asking;
 - change the bundled layout engine, or add a vendored file.
@@ -90,8 +91,8 @@ It prints either that all files are identical, or which ones changed, are extra 
 
 ## The honest limits
 
-- Claude Code and Codex install a plugin from its repository, and an update brings whatever the newest release contains, for this plugin as for any other. Releases are made only by the maintainer, and `main` is protected: its history can't be rewritten or deleted. Outside pull requests are reviewed before they're run or merged, and the checks above run on every one of them. Before you update, you can read the changes in the [changelog](../CHANGELOG.md) and verify the new version with its checksums.
-- Floorplan works by having Claude or Codex read your code to describe it. That goes to Anthropic or OpenAI under your account, like any other task you give them. See [Privacy and security](privacy-and-security.md).
+- Claude Code and Codex install a plugin from its repository, and an update brings whatever the newest release contains, for this plugin as for any other. Other agents may load the skill directly; the optional CLI adapter is configured locally by the user. Releases are made only by the maintainer, and `main` is protected: its history can't be rewritten or deleted. Outside pull requests are reviewed before they're run or merged, and the checks above run on every one of them. Before you update, you can read the changes in the [changelog](../CHANGELOG.md) and verify the new version with its checksums.
+- Floorplan works by having the coding agent you selected read your code to describe it. That goes to the model provider through that agent under its account or credentials. A configured third-party CLI has the same local permissions as the user unless it enforces a read-only sandbox itself. See [Privacy and security](privacy-and-security.md).
 
 ## Found something?
 
