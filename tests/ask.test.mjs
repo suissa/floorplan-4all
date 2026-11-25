@@ -189,6 +189,22 @@ test('a configured third-party CLI answers on the map and keeps follow-ups in it
   assert.match(calls[1].prompt, /What should I inspect next\?/);
 });
 
+test('a configured CLI can receive the prompt through a declared argument placeholder', async () => {
+  const s = await serve({
+    FLOORPLAN_ENGINE: 'custom',
+    FLOORPLAN_AGENT_COMMAND: process.execPath,
+    FLOORPLAN_AGENT_ARGS: JSON.stringify([path.join(FAKE, 'fake-agent.mjs'), '--prompt', '{prompt}']),
+    FLOORPLAN_AGENT_NAME: 'Argument agent',
+    FLOORPLAN_AGENT_READ_ONLY: '1',
+  });
+  const [answer] = pick(await ask(s, 'Show me the order flow.'), 'answer');
+  assert.equal(answer.title, 'Configured agent');
+  const [call] = s.calls();
+  assert.equal(call.args[1], '--prompt');
+  assert.match(call.args[2], /Return one JSON object matching this schema/);
+  assert.match(call.prompt, /The question:\nShow me the order flow\./);
+});
+
 test('a third-party CLI is not started unless read-only mode is explicitly enabled', async () => {
   const s = await serve({
     FLOORPLAN_ENGINE: 'custom',
