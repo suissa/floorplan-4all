@@ -163,7 +163,7 @@ const customCommand = String(process.env.FLOORPLAN_AGENT_COMMAND || '').trim();
 let customArgs = [];
 try {
   customArgs = JSON.parse(process.env.FLOORPLAN_AGENT_ARGS || '[]');
-  if (!Array.isArray(customArgs) || customArgs.length > 64 || customArgs.some((a) => typeof a !== 'string' || a.length > 8192 || a.includes('\\0'))) {
+  if (!Array.isArray(customArgs) || customArgs.length > 64 || customArgs.some((a) => typeof a !== 'string' || a.length > 8192 || a.includes('\0'))) {
     throw new Error('expected a JSON array of at most 64 strings (each at most 8192 characters)');
   }
 } catch (e) {
@@ -172,7 +172,7 @@ try {
 }
 const customReadOnly = /^(1|true|yes)$/i.test(process.env.FLOORPLAN_AGENT_READ_ONLY || '');
 const customStructured = /^(1|true|yes)$/i.test(process.env.FLOORPLAN_AGENT_STRUCTURED || '');
-const customName = String(process.env.FLOORPLAN_AGENT_NAME || (customCommand ? path.basename(customCommand).replace(/\\.(exe|cmd)$/i, '') : 'configured AI agent')).slice(0, 80);
+const customName = String(process.env.FLOORPLAN_AGENT_NAME || (customCommand ? path.basename(customCommand).replace(/\.(exe|cmd)$/i, '') : 'configured AI agent')).slice(0, 80);
 
 const ENGINES = {
   claude: {
@@ -426,7 +426,7 @@ function customRun(body, mode) {
   const prompt = `${mode.instructions}${earlier}\n\nReturn one JSON object matching this schema. Do not wrap it in Markdown:\n${JSON.stringify(schema)}\n\nThe question:\n${question}`;
   const values = { prompt, root, model, mode: body.mode || 'ask', schema: JSON.stringify(schema), schemaFile: mode.file, session };
   const hasPrompt = customArgs.some((arg) => arg.includes('{prompt}'));
-  const args = [...cli.args, ...customArgs.map((arg) => arg.replace(/\\{(prompt|root|model|mode|schema|schemaFile|session)\\}/g, (_, key) => String(values[key] ?? '')))];
+  const args = [...cli.args, ...customArgs.map((arg) => arg.replace(/\{(prompt|root|model|mode|schema|schemaFile|session)\}/g, (_, key) => String(values[key] ?? '')))];
   let stdout = '';
   return {
     args, input: hasPrompt ? '' : prompt,
