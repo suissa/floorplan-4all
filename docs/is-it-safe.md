@@ -1,6 +1,6 @@
 # Is it safe to install?
 
-Coding-agent plugins and skills can run code on your computer, so it's worth asking. Some malicious plugins look harmless when you install them, then download and run something else later (a "stage two"). Floorplan is built so it can't do that, a test checks it on every change, and you can confirm all of it yourself.
+Coding-agent plugins and skills can run code on your computer, so it's worth asking. Some malicious plugins look harmless when you install them, then download and run something else later (a "stage two"). Floorplan's shipped code does not download or execute remote code, and a test checks its own execution paths on every change. An optional third-party CLI is user-supplied and must be reviewed separately.
 
 ## What Floorplan never does
 
@@ -8,7 +8,7 @@ Coding-agent plugins and skills can run code on your computer, so it's worth ask
 - **No MCP servers.** Floorplan has none, so it never starts a server that downloads its newest version with `npx`.
 - **No dependencies, no install scripts.** Nothing comes from npm, at install time or ever. Its `package.json` exists only to run the tests.
 - **Never downloads anything, and never runs code from the internet.** No `eval`, no loading code at run time, no encoded payloads.
-- **Never changes your code.** It writes only its own `floorplan/` folder and, in Claude Code and only if you say yes, a marked section of `CLAUDE.local.md`. See [What's in your project](project-files.md).
+- **Its own scripts never change your code.** They write only their own `floorplan/` folder and, in Claude Code and only if you say yes, a marked section of `CLAUDE.local.md`. A third-party CLI you configure is separate software and runs with your user permissions; only enable it with a read-only wrapper. See [What's in your project](project-files.md) and [Other coding agents](agents.md).
 - **No analytics or tracking.**
 
 ## Everything it does
