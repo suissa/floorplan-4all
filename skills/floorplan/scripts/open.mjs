@@ -2,7 +2,7 @@
 // Show the map to the user after a build or refresh. Reuses this map's server if it's running (open tabs
 // have already reloaded themselves), restarts it if serve.mjs changed, otherwise starts it in the
 // background and opens a browser tab. Prints the URL and how to stop it.
-// usage: node open.mjs [root] [--no-open] [--port N] [--engine claude|codex] [--model M] [--claude PATH] [--codex PATH]
+// usage: node open.mjs [root] [--no-open] [--port N] [--engine claude|codex|custom] [--model M] [--claude PATH] [--codex PATH]
 //                      [--editor NAME|LINK]   (the editor "Open in editor" opens, e.g. cursor or "zed://file/{path}:{line}")
 import fs from 'node:fs';
 import path from 'node:path';
@@ -72,7 +72,7 @@ if (!status) {
   spawn(process.execPath, [serveFile, '--no-open', '--idle-exit', String(IDLE_MINUTES), ...pass], {
     cwd: root, detached: true, stdio: ['ignore', log, log], windowsHide: true,
   }).unref();
-  // finding the Claude Code or Codex CLI takes a few seconds before the server listens
+  // finding a compatible or configured agent CLI takes a few seconds before the server listens
   for (let i = 0; i < 100; i++) {
     await sleep(200);
     const n = readState();
@@ -96,8 +96,9 @@ console.log(`FLOORPLAN  ${s.url}  (${shown})`);
 const CLI = {
   claude: { name: 'the Claude Code CLI', docs: 'https://docs.claude.com/en/docs/claude-code' },
   codex: { name: 'Codex', docs: 'https://developers.openai.com/codex' },
+  custom: { name: 'a configured read-only AI agent', docs: 'https://github.com/suissa/floorplan-4all/blob/main/docs/agents.md' },
 };
 console.log(health?.cli
-  ? `ASK  works: questions run through ${cliLabel(health.engine, health.version)}${health.version ? ' (' + health.version + ')' : ''}`
-  : `ASK  needs ${(CLI[health?.want] || CLI.claude).name}, which was not found; the map itself works (${(CLI[health?.want] || CLI.claude).docs})`);
+  ? `ASK  works: questions run through ${cliLabel(health.engine, health.version, health.name)}${health.version ? ' (' + health.version + ')' : ''}`
+  : `ASK  needs ${(CLI[health?.want] || CLI.custom).name}; the map itself works (${(CLI[health?.want] || CLI.custom).docs})`);
 console.log(`SERVER  runs in the background, updates open tabs when the map is rebuilt, and stops ${IDLE_MINUTES / 60} hours after the last tab closes. Stop it now: node ${rel}/serve.mjs --stop`);

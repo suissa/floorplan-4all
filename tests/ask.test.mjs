@@ -161,3 +161,61 @@ test('on Windows, a Claude Code npm install with only bin/claude.exe is found an
   assert.equal(s.page.engine, 'claude');
   assert.equal(s.page.version, process.version);
 });
+
+
+test('a configured third-party CLI answers on the map and keeps follow-ups in its server session', async () => {
+  const s = await serve({
+    FLOORPLAN_ENGINE: 'custom',
+    FLOORPLAN_AGENT_COMMAND: process.execPath,
+    FLOORPLAN_AGENT_ARGS: JSON.stringify([path.join(FAKE, 'fake-agent.mjs'), '--mode', '{mode}']),
+    FLOORPLAN_AGENT_NAME: 'Test agent',
+    FLOORPLAN_AGENT_READ_ONLY: '1',
+  });
+  assert.equal(s.page.engine, 'custom');
+  assert.equal(s.page.name, 'Test agent');
+  const [first] = pick(await ask(s, 'How does this app work?'), 'answer');
+  assert.equal(first.title, 'Configured agent');
+  assert.equal(first.answer, 'Answered by the configured agent.');
+  assert.match(first.session, /^[0-9a-f]{16}$/);
+
+  const [second] = pick(await ask(s, 'What should I inspect next?', first.session), 'answer');
+  assert.equal(second.session, first.session);
+  const calls = s.calls();
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0].args.at(-1), 'ask');
+  assert.equal(calls[1].args.at(-1), 'ask');
+  assert.match(calls[0].prompt, /How does this app work\?/);
+  assert.match(calls[1].prompt, /Earlier in this conversation:/);
+  assert.match(calls[1].prompt, /What should I inspect next\?/);
+});
+
+test('a configured CLI can receive the prompt through a declared argument placeholder', async () => {
+  const s = await serve({
+    FLOORPLAN_ENGINE: 'custom',
+    FLOORPLAN_AGENT_COMMAND: process.execPath,
+    FLOORPLAN_AGENT_ARGS: JSON.stringify([path.join(FAKE, 'fake-agent.mjs'), '--prompt', '{prompt}']),
+    FLOORPLAN_AGENT_NAME: 'Argument agent',
+    FLOORPLAN_AGENT_READ_ONLY: '1',
+  });
+  const [answer] = pick(await ask(s, 'Show me the order flow.'), 'answer');
+  assert.equal(answer.title, 'Configured agent');
+  const [call] = s.calls();
+  assert.equal(call.args[1], '--prompt');
+  assert.match(call.args[2], /Return one JSON object matching this schema/);
+  assert.match(call.prompt, /The question:\nShow me the order flow\./);
+});
+
+test('a third-party CLI is not started unless read-only mode is explicitly enabled', async () => {
+  const s = await serve({
+    FLOORPLAN_ENGINE: 'custom',
+    FLOORPLAN_AGENT_COMMAND: process.execPath,
+    FLOORPLAN_AGENT_ARGS: JSON.stringify([path.join(FAKE, 'fake-agent.mjs')]),
+    FLOORPLAN_AGENT_NAME: 'Unsafe test agent',
+    FLOORPLAN_AGENT_READ_ONLY: '0',
+  });
+  assert.equal(s.page.cli, false);
+  assert.equal(s.page.want, 'custom');
+  const [failure] = pick(await ask(s, 'Do not run me'), 'failure');
+  assert.equal(failure.code, 'cli_missing');
+  assert.match(failure.message, /FLOORPLAN_AGENT_READ_ONLY=1/);
+});

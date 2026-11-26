@@ -1,6 +1,6 @@
 // A tripwire for what the plugin can do on someone's computer. docs/is-it-safe.md promises: no hooks, no
 // MCP servers, no dependencies or install steps, nothing downloaded or run from the internet, one outbound
-// network call (the opt-in waitlist), a fixed list of programs it runs, and vendored files that match their
+// network call (the opt-in waitlist), native programs plus an optional user-configured executable, and vendored files that match their
 // published versions. These tests fail if any of that changes, so a change like that can't slip in unnoticed,
 // in a pull request or anywhere else. If a change is intended, update this file and docs/is-it-safe.md together.
 import { test } from 'node:test';
@@ -92,7 +92,7 @@ test('it reaches the internet in one place: the waitlist, only when someone sign
   assert.doesNotMatch(page, /url\(\s*["']?https?:/i, 'no external images or fonts in CSS');
 });
 
-test('it runs a fixed list of programs, and never through a shell', () => {
+test('it runs only native or explicitly configured programs, and never through a shell', () => {
   const importers = find(/from\s+['"](?:node:)?child_process['"]/).map((x) => x.file).sort();
   assert.deepEqual(importers, ['assets/serve.mjs', 'scripts/lib/common.mjs', 'scripts/open.mjs', 'scripts/refresh.mjs'], `files that start programs. ${UPDATE}`);
   // only spawn and execFileSync, which take a program and its arguments (regex .exec() is text matching)
@@ -100,7 +100,7 @@ test('it runs a fixed list of programs, and never through a shell', () => {
   assert.deepEqual([...new Set(names)].sort(), ['execFileSync', 'spawn'], `child_process functions used. ${UPDATE}`);
   assert.deepEqual(find(/(?<![.\w])(exec|execSync|fork|spawnSync|execFile)\(/).map((x) => `${x.file}:${x.line} ${x.text}`), [], `other ways to start programs. ${UPDATE}`);
   assert.deepEqual(find(/shell:\s*true/).map((x) => `${x.file}:${x.line}`), [], 'never through a shell');
-  // what each call starts: where/which, the Claude Code or Codex CLI, Node running the skill's own scripts,
+  // what each call starts: where/which, a native or explicitly configured CLI, Node running the skill's own scripts,
   // git, and the system's "open this address in the browser" command
   const ALLOWED = new Set([
     "process.platform === 'win32' ? 'where' : 'which'",
@@ -119,6 +119,19 @@ test('it runs a fixed list of programs, and never through a shell', () => {
   const openers = /\? \['cmd', \['\/c', 'start', '', u\]\] : process\.platform === 'darwin' \? \['open', \[u\]\] : \['xdg-open', \[u\]\]/;
   assert.match(read(path.join(SKILL, 'assets', 'serve.mjs')), openers);
   assert.match(read(path.join(SKILL, 'scripts', 'open.mjs')), openers);
+});
+
+test('a third-party agent command is configured explicitly and must opt into read-only mode', () => {
+  const server = read(path.join(SKILL, 'assets', 'serve.mjs'));
+  assert.match(server, /FLOORPLAN_AGENT_COMMAND/);
+  assert.match(server, /FLOORPLAN_AGENT_ARGS/);
+  assert.match(server, /FLOORPLAN_AGENT_READ_ONLY/);
+  assert.match(server, /if \(!customCommand \|\| !customReadOnly\) return null/);
+  assert.match(server, /spawn\(cli\.cmd, run\.args, \{ cwd: root, env: cliEnv\(\), stdio:/);
+  assert.doesNotMatch(server, /spawn\(\s*customCommand/);
+  assert.match(server, /customArgs\.map\(\(arg\) => arg\.replace/);
+  assert.match(server, /customArgs\.length > 64/);
+  assert.match(server, /a\.length > 8192/);
 });
 
 test('no code is downloaded, decoded or built from text at run time', () => {

@@ -230,13 +230,13 @@ You get a [blueprint](#also-blueprints-for-apps-you-havent-built-yet) of the pla
 ```mermaid
 flowchart LR
     code["Your codebase<br/>one repo or several"] --> scan["Scan<br/>files, imports, routes, requests"]
-    scan --> agent["Claude or Codex<br/>names the parts, describes every file"]
+    scan --> agent["Your coding agent<br/>names the parts, describes every file"]
     agent --> build["Build<br/>map, health, screens, recent work"]
     build --> map["floorplan/index.html<br/>opens in your browser"]
     map -. "update the floorplan" .-> scan
 ```
 
-Scripts do the mechanical work: finding repos, parsing code in a dozen languages, matching web requests to endpoints, laying out the map. They're plain Node with no dependencies. Claude or Codex does the part only a reader can: deciding what the parts of your app *are*, and saying so plainly. Details in [How it works](docs/how-it-works.md).
+Scripts do the mechanical work: finding repos, parsing code in a dozen languages, matching web requests to endpoints, laying out the map. They're plain Node with no dependencies. Your coding agent does the part only a reader can: deciding what the parts of your app *are*, and saying so plainly. Claude Code and Codex have native integrations; other agents can use the same skill and connect their CLI to the map's Ask bar. Details in [How it works](docs/how-it-works.md).
 
 **Languages:** TypeScript, JavaScript, Python, Go, Rust, Java, Kotlin, Scala, Swift, C#, PHP, plus Vue, Svelte and Astro files and Shopify themes (Liquid), with lighter support for others.<br>
 **Endpoints:** Express, Fastify, Koa, Hono, NestJS, Next.js, Firebase Cloud Functions, Supabase Edge Functions, Flask, FastAPI, Django, Go's net/http, Gin, Echo and chi, Actix, Axum, Spring, ASP.NET Core, Laravel (with Wayfinder calls), Serverless Framework (`serverless.yml`), `Bun.serve` routes, and route tables keyed by method and path (`"GET /api/orders": listOrders`) in JavaScript and Python, or listed as `{ method, path, handle }` in JavaScript.<br>
@@ -250,7 +250,7 @@ A `floorplan/` folder holding the map. In Claude Code, if you say yes, it also a
 
 - The scan, the map and its small local server all run on your computer. The server only accepts connections from your own machine.
 - No dependencies or install scripts, and the map works offline: its layout engine and fonts are built in.
-- Questions on the map go to your own account, through the Claude Code CLI or Codex, which can read your code but not change it.
+- The map's Ask bar uses the native Claude Code or Codex adapter, or a local CLI you configure for another agent. Third-party CLIs are enabled only when you explicitly confirm that their command enforces read-only permissions; Floorplan does not sandbox that custom process.
 - The Health check never stores or shows secret values, only where they are.
 - No analytics or tracking. The map may ask once whether you'd like an email when Floorplan Cloud launches. Nothing is sent unless you sign up, and then only your email and "just me" or "with my team".
 
@@ -262,6 +262,7 @@ More in [Privacy and security](docs/privacy-and-security.md). Wondering whether 
 |---|---|
 | [Getting started](docs/getting-started.md) | Install, first map, updating, planning from a PRD, removing |
 | [Floorplan in Codex](docs/codex.md) | Installing and using it in Codex |
+| [Other coding agents](docs/agents.md) | Connect any CLI-based agent to the Ask bar and configure the read-only contract |
 | [Using the map](docs/using-the-map.md) | Every button, view, shortcut and menu |
 | [How it works](docs/how-it-works.md) | The pipeline, connection matching, refreshes |
 | [What's in your project](docs/project-files.md) | Every file Floorplan creates, and how to edit it |
@@ -282,31 +283,37 @@ Floorplan has no hooks, no MCP servers and no dependencies, downloads nothing, a
 <details>
 <summary><b>Does my code leave my computer?</b></summary>
 
-Only the way Claude Code and Codex always work: the AI reads the files it needs to describe your app, through your own account. The map itself is a local file and its server only listens on your machine. If you choose to open the map in the Claude app instead, Claude uploads the map (names, descriptions and structure, not your source code) to your private claude.ai account, and asks first. The one thing Floorplan itself ever sends is your email, and only if you sign up for the [Floorplan Cloud waitlist](docs/privacy-and-security.md#floorplan-cloud-waitlist).
+The coding agent reads the files it needs to describe your app through its own account or credentials. For a third-party CLI, its model provider handles those files according to that agent's own policies. The map itself is a local file and its server only listens on your machine. If you choose to open the map in the Claude app instead, Claude uploads the map (names, descriptions and structure, not your source code) to your private claude.ai account, and asks first. The one thing Floorplan itself ever sends is your email, and only if you sign up for the [Floorplan Cloud waitlist](docs/privacy-and-security.md#floorplan-cloud-waitlist).
 </details>
 
 <details>
 <summary><b>How long does it take, and what does it cost?</b></summary>
 
-A first map takes a few minutes for a small app and longer for a big one, because every file and endpoint gets described. It uses your Claude or ChatGPT plan like any other task. Big projects are split across parallel helpers. Updates re-read only what changed, so they're quick and cheap.
+A first map takes a few minutes for a small app and longer for a big one, because every file and endpoint gets described. It uses the model provider and plan configured for your coding agent. Big projects are split across parallel helpers. Updates re-read only what changed, so they're quick and cheap.
 </details>
 
 <details>
 <summary><b>Do I need a CLI for the Ask bar?</b></summary>
 
-No. The map works without one. The Ask bar answers through the Claude Code CLI or Codex, which can read your real code. Codex's desktop app already includes what it needs. With Claude, without the CLI you can ask from the Claude app instead, using the map alone.
+The map itself works without an agent CLI. The Ask bar needs the Claude Code or Codex native adapter, or a CLI you configure for another agent. Codex's desktop app already includes what it needs. With Claude, without the CLI you can ask from the Claude app instead, using the map alone.
 </details>
 
 <details>
 <summary><b>Will it change or commit my files?</b></summary>
 
-It only writes its own `floorplan/` folder (and, in Claude Code if you say yes, a section in `CLAUDE.local.md`), and neither is committed. It never changes your code, your `.gitignore` or your `CLAUDE.md`.
+Floorplan's own scripts only write their `floorplan/` folder (and, in Claude Code if you say yes, a section in `CLAUDE.local.md`), and neither is committed. The native Ask adapters are read-only. A third-party CLI must enforce its own read-only mode; Floorplan does not sandbox that process.
 </details>
 
 <details>
 <summary><b>The names it picked aren't how we talk about it. Can I change them?</b></summary>
 
 Yes. Just ask ("rename 'Main server' to 'Shop API' on the floorplan"), or edit `floorplan/architecture.json` and `floorplan/descriptions/` yourself. Your edits are kept on every update.
+</details>
+
+<details>
+<summary><b>Does it work with agents other than Claude Code and Codex?</b></summary>
+
+Yes. Any coding agent that can read the skill instructions and run Node can scan and build the map. To use the interactive Ask bar, connect its CLI with the generic adapter in [Other coding agents](docs/agents.md). Claude Code and Codex keep their native, automatically detected integrations.
 </details>
 
 <details>

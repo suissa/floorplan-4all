@@ -1,7 +1,7 @@
 {
   "name": "floorplan",
   "private": true,
-  "description": "Floorplan, a Claude Code plugin. No dependencies: this file only gives `npm test` a home.",
+  "description": "Floorplan, an agent-agnostic codebase mapping skill with native Claude Code and Codex integrations. No dependencies: this file only gives `npm test` a home.",
   "license": "MIT",
   "engines": { "node": ">=18" },
   "scripts": {

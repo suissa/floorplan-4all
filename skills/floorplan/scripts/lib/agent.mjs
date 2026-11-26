@@ -1,35 +1,36 @@
-// Which coding agent is running the skill: Claude Code or Codex. The map records it, so its Ask bar and
-// "Fix with …" prompts name the right one, and serve.mjs answers through the same CLI.
-// --agent <name> (or FLOORPLAN_AGENT) decides; otherwise each agent is recognised by the variables it sets
-// for every command it runs, and anything else is taken to be Claude Code. Adding an agent is an entry here.
-// "none" is for maps made without an agent session (in CI, in scripts, from your own tooling): the map then
-// names no agent in its prompts. Unattended mode (FLOORPLAN_UNATTENDED=1) implies it unless one is named.
+// Identify the agent using this skill. Claude Code and Codex have native integrations; any other
+// coding agent can identify itself with --agent or FLOORPLAN_AGENT. Unknown environments are never
+// mistaken for Claude Code. "none" is reserved for unattended runs and explicit opt-out.
 import { isUnattended } from './common.mjs';
 
 const DETECT = {
-  claude: () => false, // the default
+  claude: (env) => !!env.CLAUDECODE,
   codex: (env) => !!(env.CODEX_THREAD_ID || env.CODEX_SESSION_ID),
-  none: () => false, // only when asked for, or in unattended mode
+  none: () => false,
 };
 export const AGENTS = Object.keys(DETECT);
 
+function agentId(value) {
+  const id = String(value || '').trim().toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, '-').replace(/^[._-]+|[._-]+$/g, '').slice(0, 40);
+  return /^[a-z0-9]/.test(id) ? id : 'other';
+}
+
 export function detectAgent(args = {}, env = process.env) {
-  const v = String(args.agent || env.FLOORPLAN_AGENT || '').toLowerCase();
-  if (AGENTS.includes(v)) return v;
+  const explicit = args.agent || env.FLOORPLAN_AGENT || env.FLOORPLAN_AGENT_NAME;
+  if (explicit) return agentId(explicit);
   if (isUnattended(env)) return 'none';
-  return AGENTS.find((a) => DETECT[a](env)) || 'claude';
+  return Object.keys(DETECT).find((agent) => agent !== 'none' && DETECT[agent](env)) || 'other';
 }
 
 const CLI_NAMES = { claude: 'the Claude Code CLI', codex: 'Codex' };
-/**
- * What the CLI answering the map's questions is called, for open.mjs: its usual name, or, when its --version
- * names another program (a wrapper installed under the same command, `devin 3000.11.238` answering to
- * `claude`), that program, so the label never claims Claude Code or Codex for something else.
- */
-export function cliLabel(engine, version = '') {
-  const usual = CLI_NAMES[engine] || CLI_NAMES.claude;
+/** Label the command that answers questions, including a user-configured third-party CLI. */
+export function cliLabel(engine, version = '', displayName = '') {
+  const usual = displayName || CLI_NAMES[engine] || 'configured AI agent';
   const v = String(version || '').trim();
   const named = /^([A-Za-z][\w.-]{0,40})\s+v?\d/.exec(v)?.[1];
-  if (!named || new RegExp(engine === 'codex' ? 'codex' : 'claude', 'i').test(v)) return usual;
-  return `${named}, found as the ${engine === 'codex' ? 'codex' : 'claude'} command`;
+  const known = engine === 'codex' ? /codex/i : engine === 'claude' ? /claude/i : null;
+  if (!named || engine === 'custom' || (known && known.test(v))) return usual;
+  const command = engine === 'codex' ? 'codex' : 'claude';
+  return `${named}, found as the ${command} command`;
 }

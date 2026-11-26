@@ -7,12 +7,13 @@ For what the plugin itself can and can't do on your computer (no hooks, MCP serv
 | Part | Where it runs | What it sends |
 |---|---|---|
 | Scan, build, updates | your computer (Node.js) | nothing |
-| Writing names and descriptions | Claude or Codex, through your session | the files it reads, the same as any other task you give it |
+| Writing names and descriptions | the coding agent running the skill, through its own session | the files it reads, the same as any other task you give it |
 | The map | your browser | nothing. Its layout engine and fonts are bundled into the file, so it works offline |
 | The map's server (`serve.mjs`) | your computer, listening on `127.0.0.1` only | nothing on its own |
 | Asking questions (Claude Code CLI) | a `claude -p` session on your computer, with your account | your question, and the files Claude chooses to read |
 | Asking questions (Codex) | a `codex exec` run on your computer, with your ChatGPT sign-in, not saved to your Codex history | your question, and the files Codex chooses to read |
-| Changing a blueprint from the map | the same as asking questions, with Claude Code or Codex; the map's server then writes only the plan's files in `floorplan/` | your request, and the files the AI chooses to read |
+| Asking questions (other agents) | the local CLI or wrapper you configure, using its own sign-in or credentials | your question, map context and the files that agent chooses to read |
+| Changing a blueprint from the map | the same as asking questions, with a native or configured structured adapter; the map's server then writes only the plan's files in `floorplan/` | your request, and the files the AI chooses to read |
 | Asking questions (Claude app) | your claude.ai account | the map (names, descriptions, structure), never your source code. Claude asks before publishing it there |
 | Exporting a copy | your computer: the map's server writes one HTML file | nothing. You decide who gets the file. It holds the map, plus Health or recent work only if you tick them, and never your folder path, git remotes or source code |
 | Floorplan Cloud waitlist (only if you sign up) | the map's server, to Floorplan's waitlist service | the email you typed or chose, and "just me" or "with my team". See [below](#floorplan-cloud-waitlist) |
@@ -26,9 +27,9 @@ The layout engine ([elkjs](https://github.com/kieler/elkjs) 0.9.3, EPL-2.0) and 
 - It listens on `127.0.0.1` only, so other machines on your network can't reach it.
 - Every start creates a random token, which only the map page it serves receives. Asking questions and saving flows require that token, and those requests are refused when they come from another website.
 - It answers only to `127.0.0.1` and `localhost` at its own port, so a website that points its own domain at your computer (DNS rebinding) can't load the map or its token.
-- Questions run Claude with **read-only** tools: reading files, searching, and the map's own lookup script. It can't edit files or run other commands.
-- With Codex, questions run in Codex's **read-only** sandbox: it can read and search, but not write files.
-- On a blueprint (a map planned from a PRD), **Change** requests run the same read-only way. The agent replies with the updated plan, and the server itself writes only `floorplan/plan.json`, `floorplan/architecture.json` and `floorplan/recent-work.json`, after checking them, keeping the old copies for Undo.
+- Claude Code questions use its **read-only** tool allow-list. Codex questions use Codex's **read-only** sandbox. Both can read and search, but cannot write files through those native adapters.
+- Other agents can use the optional custom CLI adapter. The server starts the exact command and argument array you configure, without a shell. Floorplan does not sandbox a custom executable: `FLOORPLAN_AGENT_READ_ONLY=1` is your assertion that the CLI or wrapper enforces read-only access. Only set it when that is true; otherwise the Ask bar stays disabled. Read [Other coding agents](agents.md) before enabling it.
+- On a blueprint (a map planned from a PRD), **Change** requests require a native structured adapter or a custom CLI that you explicitly declare structured. The agent is asked to return the updated plan; the map's server validates it and writes only `floorplan/plan.json`, `floorplan/architecture.json` and `floorplan/recent-work.json`, keeping the old copies for Undo. The custom CLI itself must remain read-only.
 - It stops by itself two hours after the last tab closes, and `node floorplan/serve.mjs --stop` stops it immediately.
 
 ## Floorplan Cloud waitlist
